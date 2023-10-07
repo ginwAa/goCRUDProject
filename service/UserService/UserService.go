@@ -1,6 +1,9 @@
 package UserService
 
-import "project1/entity"
+import (
+	"project1/entity"
+	"project1/entity/DTO"
+)
 import "project1/dao/UserDao"
 
 func Page(user entity.User, page int, count int) ([]entity.User, error) {
@@ -17,12 +20,24 @@ func Add(user entity.User) (int64, error) {
 	return UserDao.Add(user)
 }
 
-func Count(user entity.User) (int64, error) {
-	return UserDao.Sum()
+func Count(userCountDTO DTO.UserCountDTO) (int64, error) {
+	var user entity.User
+	user.Username = userCountDTO.Username
+	user.Account = userCountDTO.Account
+	if userCountDTO.Like != "true" {
+		return UserDao.CountByUser(user)
+	} else {
+		return UserDao.CountByUserLike(user)
+	}
 }
 
 func Update(user entity.User) error {
+	if !user.DeletedAt.IsZero() {
+		return UserDao.Delete(user)
+	}
 	user.MarkUpdated()
-	user.SaltMD5HashPassword()
+	if user.Password != "" {
+		user.SaltMD5HashPassword()
+	}
 	return UserDao.Update(user)
 }

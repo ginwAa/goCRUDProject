@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteTargetsManager">
+    <option name="projectDefaultTargetUuid" value="5ec54515-ff1b-489c-873e-278c07fe3f54" />
+    <targets>
+      <target name="WSL - openSUSE-Leap-15.5" type="wsl" uuid="59e93043-7d29-413b-b50e-19d1bf62813a">
+        <config>
+          <option name="distributionMsId" value="openSUSE-Leap-15.5" />
+          <option name="projectRootOnTarget" value="{exitCode=0, timeout=false, cancelled=false, stdout=/mnt/d/Program Files (x86)/JetBrains/GoLand 2023.2.2/jbr/bin&#10;, stderr=}/project1" />
+        </config>
+        <ContributedStateBase type="GoLanguageRuntime">
+          <config>
+            <option name="goPath" value="/home/feng/go" />
+            <option name="goRoot" value="/usr/bin/go" />
+            <option name="goVersion" value="go1.21.1 linux/amd64" />
+          </config>
+        </ContributedStateBase>
+      </target>
+    </targets>
+  </component>
+</project>

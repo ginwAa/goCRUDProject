@@ -10,17 +10,22 @@ import (
 const salt string = "<IAmSalt>%"
 
 type User struct {
-	Id        int64
-	Username  string
-	Password  string
-	Status    int
-	Granted   int
-	UpdatedAt time.Time
-	CreatedAt time.Time
+	Id        int64     `json:"id"`
+	Account   string    `json:"account"`
+	Username  string    `json:"username"`
+	Password  string    `json:"password"`
+	Status    int       `json:"status"`
+	Role      int       `json:"role"`
+	Gender    int       `json:"gender"`
+	Phone     string    `json:"phone"`
+	Email     string    `json:"email"`
+	UpdatedAt time.Time `json:"updatedAt"`
+	CreatedAt time.Time `json:"createdAt"`
+	DeletedAt time.Time `json:"deletedAt"`
 }
 
 func (u User) ToString() string {
-	return fmt.Sprintf("Id:%d Name:%s Pwd:%s Status:%d Granted:%d", u.Id, u.Username, u.Password, u.Status, u.Granted)
+	return fmt.Sprintf("Id:%d Name:%s Pwd:%s Status:%d Role:%d", u.Id, u.Username, u.Password, u.Status, u.Role)
 }
 
 func (u *User) MarkUpdated() {
@@ -30,6 +35,10 @@ func (u *User) MarkUpdated() {
 func (u *User) MarkCreated() {
 	u.CreatedAt = time.Now()
 	u.UpdatedAt = time.Now()
+}
+
+func (u *User) MarkDeleted() {
+	u.DeletedAt = time.Now()
 }
 
 // md5Hash hash the string and return the hash value
@@ -50,14 +59,3 @@ func (u User) CheckPassword(s string) bool {
 	s += salt
 	return md5Hash(&s) == u.Password
 }
-
-// GenerateRandomString securely generated random string.
-//
-//	func GenerateRandomString() (string, error) {
-//		b := make([]byte, 64)
-//		_, err := rand.Read(b)
-//		if err != nil {
-//			return "", err
-//		}
-//		return base64.URLEncoding.EncodeToString(b), err
-//	}
