@@ -17,7 +17,7 @@ func Error(status int, msg string) Result {
 }
 
 func BadRequest() Result {
-	return Error(http.StatusBadRequest, "Request error!")
+	return Error(http.StatusBadRequest, "Request constants!")
 }
 
 func Success(data interface{}) Result {

@@ -7,16 +7,18 @@ import (
 	"time"
 )
 
-const salt string = "<IAmSalt>%"
+const salt = "<IAmSalt>%"
+
+var SecretKey = []byte("<IAmKey>")
 
 type User struct {
 	Id        int64     `json:"id"`
 	Account   string    `json:"account"`
 	Username  string    `json:"username"`
 	Password  string    `json:"password"`
-	Status    int       `json:"status"`
-	Role      int       `json:"role"`
-	Gender    int       `json:"gender"`
+	Status    int       `json:"status"` // 1 active 2 frozen
+	Role      int       `json:"role"`   // 1 admin	2 normal
+	Gender    int       `json:"gender"` // 1 male	2 female
 	Phone     string    `json:"phone"`
 	Email     string    `json:"email"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -39,6 +41,7 @@ func (u *User) MarkCreated() {
 
 func (u *User) MarkDeleted() {
 	u.DeletedAt = time.Now()
+	u.UpdatedAt = time.Now()
 }
 
 // md5Hash hash the string and return the hash value
@@ -49,10 +52,10 @@ func md5Hash(s *string) string {
 	return *s
 }
 
-func (u *User) SaltMD5HashPassword() {
-	u.Password += salt
-	md5Hash(&u.Password)
-	fmt.Println("hash done: " + u.Password)
+func SaltMD5Hash(s string) string {
+	s += salt
+	md5Hash(&s)
+	return s
 }
 
 func (u User) CheckPassword(s string) bool {

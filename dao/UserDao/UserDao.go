@@ -3,11 +3,10 @@ package UserDao
 import (
 	"project1/conf"
 	"project1/entity"
-	"strconv"
 )
 
-func PageByUsername(s string, page int, count int) ([]entity.User, error) {
-	rows, err := conf.PGDB.Query("SELECT id, username, updated_at, created_at, status, account, gender, phone, email, role FROM users WHERE username like CONCAT('%', $1::text, '%') and deleted_at is NULL ORDER BY id LIMIT $2 OFFSET $3", s, count, (page-1)*count)
+func PageByUsername(s string, page int, size int) ([]entity.User, error) {
+	rows, err := conf.PGDB.Query("SELECT id, username, updated_at, created_at, status, account, gender, phone, email, role FROM users WHERE username like CONCAT('%', $1::text, '%') and deleted_at is NULL ORDER BY id LIMIT $2 OFFSET $3", s, size, (page-1)*size)
 	if err != nil {
 		return nil, err
 	}
@@ -24,9 +23,8 @@ func PageByUsername(s string, page int, count int) ([]entity.User, error) {
 	return users, nil
 }
 
-func Page(page int, count int) ([]entity.User, error) {
-	//rows, err := conf.PGDB.Query("SELECT id, username, updated_at, created_at, status, account, gender, phone, email FROM users LIMIT $1 OFFSET $2", count, count*page)
-	rows, err := conf.PGDB.Query("SELECT id, username, updated_at, created_at, status, account, gender, phone, email, role FROM users  WHERE deleted_at is NULL ORDER BY id LIMIT $1 OFFSET $2", count, (page-1)*count)
+func Page(page int, size int) ([]entity.User, error) {
+	rows, err := conf.PGDB.Query("SELECT id, username, updated_at, created_at, status, account, gender, phone, email, role FROM users WHERE deleted_at is NULL ORDER BY id LIMIT $1 OFFSET $2", size, (page-1)*size)
 	defer rows.Close()
 	if err != nil {
 		return nil, err
@@ -46,8 +44,57 @@ func Page(page int, count int) ([]entity.User, error) {
 
 func Add(user entity.User) (int64, error) {
 	var id int64
-	err := conf.PGDB.QueryRow("INSERT INTO users (username, password, updated_at, created_at, status, role, account, gender, phone, email) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id", user.Username, user.Password, user.UpdatedAt, user.CreatedAt, user.Status, user.Role, user.Account, user.Gender, user.Phone, user.Email).Scan(&id)
-	return id, err
+	row := conf.PGDB.QueryRow("INSERT INTO users (username, password, updated_at, created_at, status, role, account, gender, phone, email) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id", user.Username, user.Password, user.UpdatedAt, user.CreatedAt, user.Status, user.Role, user.Account, user.Gender, user.Phone, user.Email)
+	err := row.Err()
+	if err != nil {
+		return 0, err
+	}
+	err = row.Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+func SelectOneByLogin(account string, password string) (entity.User, error) {
+	res := conf.PGDB.QueryRow("SELECT id, username, status, role, account, gender, phone, email FROM users WHERE deleted_at is NULL and account = $1 and password = $2", account, password)
+	err := res.Err()
+	var ret entity.User
+	if err != nil {
+		return ret, err
+	}
+	err = res.Scan(&ret.Id, &ret.Username, &ret.Status, &ret.Role, &ret.Account, &ret.Gender, &ret.Phone, &ret.Email)
+	return ret, err
+}
+
+func CountByAccount(account string) (int64, error) {
+	res, err := conf.PGDB.Query("SELECT COUNT(1) FROM users WHERE account = $1 and deleted_at is NULL", account)
+	if err != nil {
+		return 0, err
+	}
+	defer res.Close()
+	res.Next()
+	var sum int64
+	err = res.Scan(&sum)
+	if err != nil {
+		return 0, err
+	}
+	return sum, res.Err()
+}
+
+func CountByUsernameLike(username string) (int64, error) {
+	res, err := conf.PGDB.Query("SELECT COUNT(1) FROM users WHERE username like CONCAT('%', $1::text, '%')and deleted_at is NULL", username)
+	if err != nil {
+		return 0, err
+	}
+	defer res.Close()
+	res.Next()
+	var sum int64
+	err = res.Scan(&sum)
+	if err != nil {
+		return 0, err
+	}
+	return sum, res.Err()
 }
 
 func CountAll() (int64, error) {
@@ -65,75 +112,26 @@ func CountAll() (int64, error) {
 	return sum, res.Err()
 }
 
-func CountByUserLike(user entity.User) (int64, error) {
-	res, err := conf.PGDB.Query("SELECT COUNT(1) FROM users WHERE username like CONCAT('%', $1::text, '%') and account like CONCAT('%', $2::text, '%') and deleted_at is NULL", user.Username, user.Account)
+func UpdateUsername(user entity.User) (int64, error) {
+	res, err := conf.PGDB.Exec("UPDATE users SET updated_at = $1, username = $2 WHERE id = $3", user.UpdatedAt, user.Username, user.Id)
 	if err != nil {
 		return 0, err
 	}
-	defer res.Close()
-	res.Next()
-	var sum int64
-	err = res.Scan(&sum)
-	if err != nil {
-		return 0, err
-	}
-	return sum, res.Err()
+	return res.RowsAffected()
 }
 
-func CountByUser(user entity.User) (int64, error) {
-	sql := "SELECT COUNT(1) FROM users WHERE deleted_at is NULL"
-	if user.Username != "" {
-		sql += " and username='" + user.Username + "'"
-	}
-	if user.Account != "" {
-		sql += " and account='" + user.Account + "'"
-	}
-	res, err := conf.PGDB.Query(sql)
+func UpdatePassword(user entity.User) (int64, error) {
+	res, err := conf.PGDB.Exec("UPDATE users SET updated_at = $1, password = $2 WHERE id = $3", user.UpdatedAt, user.Password, user.Id)
 	if err != nil {
 		return 0, err
 	}
-	defer res.Close()
-	res.Next()
-	var sum int64
-	err = res.Scan(&sum)
+	return res.RowsAffected()
+}
+
+func Delete(user entity.User) (int64, error) {
+	res, err := conf.PGDB.Exec("UPDATE users SET deleted_at = $1, updated_at = $2 WHERE id = $3", user.DeletedAt, user.UpdatedAt, user.Id)
 	if err != nil {
 		return 0, err
 	}
-	return sum, res.Err()
-}
-
-func Update(user entity.User) error {
-	sql := "UPDATE users SET updated_at = $1"
-	if user.Username != "" {
-		sql += ",username='" + user.Username + "'"
-	}
-	if user.Password != "" {
-		sql += ",password='" + user.Password + "'"
-	}
-	if user.Status != 0 {
-		sql += ",status=" + strconv.Itoa(user.Status)
-	}
-	if user.Role != 0 {
-		sql += ",granted=" + strconv.Itoa(user.Role)
-	}
-	if user.Gender != 0 {
-		sql += ",gender=" + strconv.Itoa(user.Gender)
-	}
-	if user.Account != "" {
-		sql += ",account=" + user.Account + "'"
-	}
-	if user.Phone != "" {
-		sql += ",phone=" + user.Phone + "'"
-	}
-	if user.Email != "" {
-		sql += ",email=" + user.Email + "'"
-	}
-	sql += " WHERE id = $2"
-	_, err := conf.PGDB.Exec(sql, user.UpdatedAt, user.Id)
-	return err
-}
-
-func Delete(user entity.User) error {
-	_, err := conf.PGDB.Exec("UPDATE users SET deleted_at = $1 WHERE id = $2", user.DeletedAt, user.Id)
-	return err
+	return res.RowsAffected()
 }
