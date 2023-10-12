@@ -23,7 +23,7 @@ func Page(user entity.User, page int, size int) ([]entity.User, error) {
 }
 
 func Add(user entity.User) (int64, error) {
-	if user.Account == "" || user.Password == "" || user.Username == "" ||
+	if user.Account == "" || user.Password == "" || user.Username == "" || len(user.Password) > 20 || len(user.Username) > 20 || len(user.Account) > 20 ||
 		user.Role != 1 && user.Role != 2 || user.Status != 1 && user.Status != 2 || user.Gender != 1 && user.Gender != 2 {
 		return 0, fmt.Errorf(constants.USER_DATA_ERROR)
 	}
@@ -47,7 +47,7 @@ func Count(username string) (int64, error) {
 
 func Update(user entity.User) error {
 	user.MarkUpdated()
-	if user.Password != "" {
+	if user.Password != "" && len(user.Password) < 20 {
 		user.Password = entity.SaltMD5Hash(user.Password)
 		res, err := UserDao.UpdatePassword(user)
 		if err != nil {
@@ -60,7 +60,7 @@ func Update(user entity.User) error {
 		}
 		return nil
 	}
-	if user.Username != "" {
+	if user.Username != "" && len(user.Username) < 20 {
 		res, err := UserDao.UpdateUsername(user)
 		if err != nil {
 			log.Printf("user/update err3: %s\n", err)

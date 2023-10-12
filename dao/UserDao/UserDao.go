@@ -129,7 +129,7 @@ func UpdatePassword(user entity.User) (int64, error) {
 }
 
 func Delete(user entity.User) (int64, error) {
-	res, err := conf.PGDB.Exec("UPDATE users SET deleted_at = $1, updated_at = $2 WHERE id = $3", user.DeletedAt, user.UpdatedAt, user.Id)
+	res, err := conf.PGDB.Exec("UPDATE users SET deleted_at = $1, updated_at = $2, account = $3::text WHERE id = $3", user.DeletedAt, user.UpdatedAt, user.Id)
 	if err != nil {
 		return 0, err
 	}
