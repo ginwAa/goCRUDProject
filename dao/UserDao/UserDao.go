@@ -57,7 +57,7 @@ func Add(user entity.User) (int64, error) {
 }
 
 func SelectOneByLogin(account string, password string) (entity.User, error) {
-	res := conf.PGDB.QueryRow("SELECT id, username, status, role, account, gender, phone, email FROM users WHERE deleted_at is NULL and account = $1 and password = $2", account, password)
+	res := conf.PGDB.QueryRow("SELECT id, username, status, role, account, gender, phone, email FROM users WHERE deleted_at is NULL and account = $1 and password = $2 and status != 2", account, password)
 	err := res.Err()
 	var ret entity.User
 	if err != nil {
